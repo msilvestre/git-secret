@@ -66,3 +66,55 @@ function teardown {
   [[ "$output" == *"changes in $SECOND_FILE_TO_HIDE"* ]]
   [[ "$output" == *"$second_file_to_hide"* ]]
 }
+
+@test "run 'changes' to compare local with a specific commit" {
+  email=$(test_user_email $TEST_DEFAULT_USER)
+  local new_content="new content"
+  echo "$new_content" >> "$FILE_TO_HIDE"
+  set_state_secret_hide
+  git_commit "$email" "First Commit"
+  sha1=`git rev-parse HEAD`
+
+  #change File To hide again
+  local different_content="some more stuff"
+  echo "$different_content" >> "$FILE_TO_HIDE"
+
+  local password=$(test_user_password "$TEST_DEFAULT_USER")
+
+  run git secret changes -d "$TEST_GPG_HOMEDIR" -p "$password" "$FILE_TO_HIDE" -a "$sha1"
+  [ "$status" -eq 0 ]
+
+  # Testing that output has both filename and changes:
+  [[ "$output" == *"changes in $FILE_TO_HIDE"* ]]
+  [[ "$output" == *"$different_content"* ]]
+}
+
+
+#@test "run 'changes' to compare local with two specific commits" {
+#  email=$(test_user_email $TEST_DEFAULT_USER)
+#
+#  local new_content="new content"
+#  echo "$new_content" >> "$FILE_TO_HIDE"
+#  set_state_secret_hide
+#  git_commit "$email" "First Commit"
+#  sha1=`git rev-parse HEAD`
+#
+#  local more_content="more content"
+#  echo "$more_content" >> "$FILE_TO_HIDE"
+#  set_state_secret_hide
+#  git_commit "$email" "Second Commit"
+#  sha2=`git rev-parse HEAD`
+#
+#  #change File To hide again
+#  local different_content="some more stuff"
+#  echo "$different_content" >> "$FILE_TO_HIDE"
+#
+#  local password=$(test_user_password "$TEST_DEFAULT_USER")
+#
+#  run git secret changes -d "$TEST_GPG_HOMEDIR" -p "$password" "$FILE_TO_HIDE" -a "$sha1" -b "$sha2"
+#  [ "$status" -eq 0 ]
+#
+#  # Testing that output has both filename and changes:
+#  [[ "$output" == *"changes in $FILE_TO_HIDE"* ]]
+#  [[ "$output" == *"$more_content"* ]]
+#}
